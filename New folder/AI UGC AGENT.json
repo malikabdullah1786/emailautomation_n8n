@@ -1,0 +1,489 @@
+{
+  "name": "Telegram Heygen",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "id": "8033dc48-b912-4375-afa3-7515b4e62ad5",
+      "name": "Telegram Trigger",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1,
+      "position": [
+        60,
+        140
+      ],
+      "webhookId": "telegram-webhook-id",
+      "credentials": {
+        "telegramApi": {
+          "id": "7bJ9zxtKIZ5q3NIz",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.heygen.com/v2/video/generate",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"dimension\": {\n    \"width\": 1280,\n    \"height\": 720\n  },\n  \"video_inputs\": [\n    {\n      \"character\": {\n        \"type\": \"avatar\",\n        \"avatar_id\": \"YOURID\",\n        \"avatar_style\": \"normal\"\n      },\n      \"voice\": {\n        \"type\": \"audio\",\n        \"audio_url\": \"{{ $json.data.tasks[1].result.files[0].url }}\"\n      },\n      \"background\": {\n        \"type\": \"color\",\n        \"value\": \"#008000\"\n      }\n    }\n  ]\n}",
+        "options": {}
+      },
+      "id": "51ec99b1-ea61-4733-816b-9bbf49259242",
+      "name": "Generate HeyGen Video",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        260,
+        360
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "yJ8C9Ov8JwPToncy",
+          "name": "HeyGen"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://api.heygen.com/v1/video_status.get?video_id={{ $json.data.video_id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "id": "a6f5eab3-c963-4350-996c-bfdd49e59510",
+      "name": "Check Video Status",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        620,
+        360
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "yJ8C9Ov8JwPToncy",
+          "name": "HeyGen"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "unit": "minutes"
+      },
+      "id": "ad0cb841-b527-483e-94f6-ceb367cf8f51",
+      "name": "Wait for Processing",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [
+        1000,
+        560
+      ],
+      "webhookId": "589f8ffd-3736-4ba9-9915-c63e0af12fc0"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "condition-1",
+              "leftValue": "={{ $json.data.status }}",
+              "rightValue": "completed",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "cc39929b-bf68-4528-b9b3-f9c68bf4ad27",
+      "name": "Check if Completed",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        820,
+        360
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.data.video_url }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "id": "3c8c0ba8-8be3-478f-bf6b-85a6847b4790",
+      "name": "Download Generated Video",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        980,
+        360
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "sendVideo",
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "binaryData": true,
+        "additionalFields": {}
+      },
+      "id": "e6cc93c9-ea4a-4ed2-8178-0063b0d7386d",
+      "name": "Send Video to Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1160,
+        360
+      ],
+      "webhookId": "d6a51697-1b00-45a5-b557-772b091ce4db",
+      "credentials": {
+        "telegramApi": {
+          "id": "7bJ9zxtKIZ5q3NIz",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $json.message.voice.file_id }}"
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        260,
+        140
+      ],
+      "id": "f0aa1a2b-f4a4-4c5f-bf2f-793bf6a37175",
+      "name": "Telegram1",
+      "webhookId": "f42b77ec-a33c-4b3f-8c81-8cb30fe0548d",
+      "credentials": {
+        "telegramApi": {
+          "id": "7bJ9zxtKIZ5q3NIz",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "root",
+          "cachedResultName": "/ (Root folder)"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        440,
+        140
+      ],
+      "id": "264765f8-3c66-470f-8a0b-2254568a950d",
+      "name": "Google Drive",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "DzVslbFus0UJHfIU",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "share",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "permissionsUi": {
+          "permissionsValues": {
+            "role": "reader",
+            "type": "anyone"
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        600,
+        140
+      ],
+      "id": "5d89a5cc-7fa4-4261-95b9-e9b56f88ea29",
+      "name": "Google Drive1",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "DzVslbFus0UJHfIU",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.cloudconvert.com/v2/jobs",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"tasks\": {\n    \"import-oga-file\": {\n      \"operation\": \"import/url\",\n      \"url\": \"https://drive.google.com/uc?export=download&id={{ $('Google Drive').item.json.id }}\"\n    },\n    \"convert-to-mp3\": {\n      \"operation\": \"convert\",\n      \"input\": \"import-oga-file\",\n      \"input_format\": \"oga\",\n      \"output_format\": \"mp3\",\n      \"audio_bitrate\": 128,\n      \"audio_frequency\": 44100\n    },\n    \"export-mp3-file\": {\n      \"operation\": \"export/url\",\n      \"input\": \"convert-to-mp3\"\n    }\n  }\n} ",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        800,
+        140
+      ],
+      "id": "7d28d76c-7ebd-438d-b159-7f3967bfa54e",
+      "name": "CloudConvert",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "1IH2sCwXMObM6LgI",
+          "name": "CloudConvert"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 15
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        980,
+        140
+      ],
+      "id": "ef6132ba-9f5a-4d55-9cea-6f9d9dbf1922",
+      "name": "Wait",
+      "webhookId": "4a4922a9-cda5-422f-b8a0-47b91cb7fced"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.cloudconvert.com/v2/jobs/{{ $('CloudConvert').item.json.data.id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1140,
+        140
+      ],
+      "id": "1fe37e19-6507-41eb-adc2-db8489176eb6",
+      "name": "Get .MP3",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "1IH2sCwXMObM6LgI",
+          "name": "CloudConvert"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 3,
+        "unit": "minutes"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        440,
+        360
+      ],
+      "id": "4004bddd-835c-4065-881f-2115eeed1bfa",
+      "name": "Wait1",
+      "webhookId": "5ae7c616-83e2-438c-bfac-f8acf0bb3940"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Telegram1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate HeyGen Video": {
+      "main": [
+        [
+          {
+            "node": "Wait1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Video Status": {
+      "main": [
+        [
+          {
+            "node": "Check if Completed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait for Processing": {
+      "main": [
+        [
+          {
+            "node": "Check Video Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check if Completed": {
+      "main": [
+        [
+          {
+            "node": "Download Generated Video",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait for Processing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Generated Video": {
+      "main": [
+        [
+          {
+            "node": "Send Video to Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram1": {
+      "main": [
+        [
+          {
+            "node": "Google Drive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive": {
+      "main": [
+        [
+          {
+            "node": "Google Drive1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive1": {
+      "main": [
+        [
+          {
+            "node": "CloudConvert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CloudConvert": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Get .MP3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get .MP3": {
+      "main": [
+        [
+          {
+            "node": "Generate HeyGen Video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait1": {
+      "main": [
+        [
+          {
+            "node": "Check Video Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "55524bad-c754-430b-8f08-ba2fde50e31a",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "70c757721d30d76f1842855cfa90ccd9512f5a4eee3c990812a6d23c1c70472c"
+  },
+  "id": "KUBnEOxxVprfQwf7",
+  "tags": []
+}
