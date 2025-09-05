@@ -1,0 +1,756 @@
+{
+  "name": "only send gmail",
+  "nodes": [
+    {
+      "parameters": {
+        "triggerTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        }
+      },
+      "id": "7f28bde0-74d7-4980-9bc5-8ed26fc57368",
+      "name": "Daily Email Trigger",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [
+        -896,
+        480
+      ],
+      "alwaysOutputData": true,
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "filter-unsent",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "unsent",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "f54cd4a4-2819-431b-a1bf-7d81119b078c",
+      "name": "Filter Unsent Emails",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2,
+      "position": [
+        -464,
+        480
+      ]
+    },
+    {
+      "parameters": {
+        "maxItems": 200
+      },
+      "id": "4b405f69-b6bb-45b7-b9c3-ebd9ea700209",
+      "name": "Limit to 200 Emails",
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        -240,
+        480
+      ],
+      "alwaysOutputData": true,
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const currentDateTime = new Date().toISOString();\nconst emailSubject = \"Testing automation\";\nconst emailBody = `Hi ${$json.name},\n\nI hope this email finds you well. \n\n${$json.output}\n\n\nBest regards,\nMuhammad Abdullah\nFAST\n0309-4561786`;\n\nreturn {\n  json: {\n    email: $json.email,\n    name: $json.name,\n    row_number: $json.row_number,\n    subject: emailSubject,\n    body: emailBody,\n    send_time: currentDateTime,\n    follow_up_count: $json.follow_up_count || 0,\n    status: 'sending'\n  }\n};"
+      },
+      "id": "27369695-eff7-4f78-b676-af279405a31e",
+      "name": "Prepare Email Content",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        256,
+        288
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "subject": "={{ $json.subject }}",
+        "message": "={{ $json.body }}",
+        "toList": [
+          "={{  $json.email  }}"
+        ],
+        "additionalFields": {}
+      },
+      "id": "15343d7b-4d44-47b5-87c1-5e0f1acd9075",
+      "name": "Send Email via Gmail",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 1,
+      "position": [
+        304,
+        512
+      ],
+      "alwaysOutputData": true,
+      "retryOnFail": false,
+      "notesInFlow": false,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "nhrygbAi2d4XyJHY",
+          "name": "Gmail account"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1oFXvHS8iu56fU1OjesQEGfokhAIVVHcUV2i1vCp-NGY/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1oFXvHS8iu56fU1OjesQEGfokhAIVVHcUV2i1vCp-NGY/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "status": "={{ $json.labelIds[0] }}",
+            "email": "={{ $json.email }}",
+            "sent_time": "={{ $json.send_time }}",
+            "follow_up_count": "={{ $json.follow_up_count }}",
+            "row_number": 0,
+            "row": "={{ $json.row_number }}"
+          },
+          "matchingColumns": [
+            "email"
+          ],
+          "schema": [
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "company",
+              "displayName": "company",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "sent_time",
+              "displayName": "sent_time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "replied",
+              "displayName": "replied",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "reply_time",
+              "displayName": "reply_time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "follow_up_count",
+              "displayName": "follow_up_count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "last_follow_up_time",
+              "displayName": "last_follow_up_time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "follow_up_status",
+              "displayName": "follow_up_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "notes",
+              "displayName": "notes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "row",
+              "displayName": "row",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "5609687c-5a6c-493d-b4d4-320b6f050f2c",
+      "name": "Update Sent Status",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [
+        704,
+        336
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "JxpYP7v9Z0iyxybC",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1AeahKOLAtn5TOhJ_8IGDIcyWDOZ2frOGs2Jx8_nUWiw/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1AeahKOLAtn5TOhJ_8IGDIcyWDOZ2frOGs2Jx8_nUWiw/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "row_number": "={{ $json.row_number }}",
+            "row": "={{ $json.row }}",
+            "Recipient": "={{ $json.email }}",
+            "Sent Date": "={{ $json.sent_time }}",
+            "Message ID": "={{ $json.threadId }}",
+            "Subject": "={{ $json.subject }}",
+            "Follow-up Count": "={{ $json.follow_up_count }}"
+          },
+          "matchingColumns": [
+            "row_number"
+          ],
+          "schema": [
+            {
+              "id": "row",
+              "displayName": "row",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Recipient",
+              "displayName": "Recipient",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Message ID",
+              "displayName": "Message ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Subject",
+              "displayName": "Subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Sent Date",
+              "displayName": "Sent Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Reply Status",
+              "displayName": "Reply Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Is Follow-up",
+              "displayName": "Is Follow-up",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Follow-up Count",
+              "displayName": "Follow-up Count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "dea320e4-d861-4b4d-859d-ef92a12da1a1",
+      "name": "Log to Email Tracking Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [
+        1072,
+        480
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Nri9hzDHGc2ECAU9",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1oFXvHS8iu56fU1OjesQEGfokhAIVVHcUV2i1vCp-NGY/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1oFXvHS8iu56fU1OjesQEGfokhAIVVHcUV2i1vCp-NGY/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "options": {}
+      },
+      "id": "803f35f9-ead8-45a5-b6d4-3450bceb2ab7",
+      "name": "Get Email List",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [
+        -688,
+        480
+      ],
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "notesInFlow": false,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "JxpYP7v9Z0iyxybC",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        464,
+        368
+      ],
+      "id": "f962edec-fbc3-4673-848c-5ab58bf0016a",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        880,
+        480
+      ],
+      "id": "12d817b3-8d40-4554-946f-cc88009bbc43",
+      "name": "Merge1"
+    },
+    {
+      "parameters": {
+        "amount": null
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        592,
+        528
+      ],
+      "id": "1b51694b-3498-42a6-8b33-d650cb282d5e",
+      "name": "Wait",
+      "webhookId": "f24c7773-0d01-4736-9608-21ea7c0c0b83"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=i want to write the personalized email \nonly the bode cone not regard name etc i will provide you href from that you will search about its food {{ $json.href }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        -256,
+        0
+      ],
+      "id": "68ecbf08-d43d-4170-bbda-7ec1c6aa737b",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -256,
+        240
+      ],
+      "id": "adeee2a0-7a8e-44f0-aad3-c87bc45d7160",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "ht3yN3ksOuOZZ87L",
+          "name": "OpenAi account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -64,
+        560
+      ],
+      "id": "3556c57e-37f3-4964-99ee-8942445be132",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        112,
+        320
+      ],
+      "id": "a9ed1942-5d70-45a2-9383-00b7ef842925",
+      "name": "Merge2"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Daily Email Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Email List",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Unsent Emails": {
+      "main": [
+        [
+          {
+            "node": "Limit to 200 Emails",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit to 200 Emails": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Email Content": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send Email via Gmail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Email via Gmail": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          },
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Sent Status": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Email List": {
+      "main": [
+        [
+          {
+            "node": "Filter Unsent Emails",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          },
+          {
+            "node": "Update Sent Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge1": {
+      "main": [
+        [
+          {
+            "node": "Log to Email Tracking Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Merge2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge2",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge2": {
+      "main": [
+        [
+          {
+            "node": "Prepare Email Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "62290080-a77a-46b4-a21b-46c7324303b0",
+  "meta": {
+    "instanceId": "065ad3bf3b1ce77676f08127f420ee6bcf85d7414cfe918d48444b7330cc3de8"
+  },
+  "id": "HL8rooy6BwQXrwE1",
+  "tags": []
+}

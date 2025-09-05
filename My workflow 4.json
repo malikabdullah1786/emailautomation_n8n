@@ -1,0 +1,621 @@
+{
+  "name": "My workflow 4",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 1
+            }
+          ]
+        }
+      },
+      "id": "ceabf235-7fc0-4dad-a32a-64996a92d8be",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [
+        -80,
+        -112
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "getAll",
+        "limit": 5,
+        "additionalFields": {
+          "format": "resolved",
+          "q": "is:unread -from:me (from:lhr.nu.edu.pk OR from:gmail.com)"
+        }
+      },
+      "id": "dec8524a-8844-4a8a-959c-ef956f28dcfe",
+      "name": "Get Unread Emails",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 1,
+      "position": [
+        128,
+        -112
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "nhrygbAi2d4XyJHY",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/18PPp5sa5VvMyZbXTkQXK5tzi5YR0yA6SSQv4bHShzUk/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "url",
+          "value": "https://docs.google.com/spreadsheets/d/18PPp5sa5VvMyZbXTkQXK5tzi5YR0yA6SSQv4bHShzUk/edit#gid=0",
+          "__regex": "https:\\/\\/docs\\.google\\.com\\/spreadsheets\\/d\\/[0-9a-zA-Z\\-_]+.*\\#gid=([0-9]+)"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "thread id": "={{ $json.threadId }}",
+            "email": "={{ $json.from.value[0].address }}",
+            "messageid": "={{ $json.id }}",
+            "recieve": "={{ $json.text }}",
+            "alreadyreply": "unsent"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "thread id",
+              "displayName": "thread id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "recieve",
+              "displayName": "recieve",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "messageid",
+              "displayName": "messageid",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "alreadyreply",
+              "displayName": "alreadyreply",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "8ae72cd8-5424-4d54-8bdf-2e42c94cb232",
+      "name": "Read Processed Emails",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [
+        320,
+        -112
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "rsWcFskPM2pJVrDc",
+          "name": "Google Sheets account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        816,
+        -112
+      ],
+      "id": "a13361cf-d823-48c0-b220-294f6828612a",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=\n\nIMPORTANT GUIDELINES:\n- Keep the response concise and relevant\n- Maintain a professional tone\n- If it's a job inquiry or business opportunity, express openness and interest\n- If it's a general inquiry, provide helpful information\n\n- Do NOT include a subject line, only the email body\n- Do NOT repeat the original message\n\nonly have the sender email adress if you able to extract the name if no name availble then use the mr\\ms\n\n\n      \nContent:give answer to this  {{ $json.recieve }}\n\nGenerate only the reply email body: that i provide you not write the regards please\nalso not add these detail \\n\\nBest,  \\n[Your Name]\" please\n",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        976,
+        -416
+      ],
+      "id": "70f4aac3-9083-4dc3-a6d7-7acf3ca719ee",
+      "name": "Generate AI Reply"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "options": {
+          "temperature": 0.7
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1008,
+        -256
+      ],
+      "id": "313d2ab5-2378-4632-bcdd-0b0eb095bb72",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "ht3yN3ksOuOZZ87L",
+          "name": "OpenAi account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "reply",
+        "messageId": "={{ $('Loop Over Items').item.json.id }}",
+        "emailType": "text",
+        "message": "={{ $json.body }}",
+        "options": {}
+      },
+      "id": "46c128d5-cbb2-40c8-92aa-50f2fa5dfc2b",
+      "name": "Send Email Reply",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2,
+      "position": [
+        1216,
+        -112
+      ],
+      "webhookId": "f4640d19-79f3-4317-992a-69cc0e621231",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "nhrygbAi2d4XyJHY",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/18PPp5sa5VvMyZbXTkQXK5tzi5YR0yA6SSQv4bHShzUk/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/18PPp5sa5VvMyZbXTkQXK5tzi5YR0yA6SSQv4bHShzUk/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "thread id": "={{ $json.threadId }}",
+            "alreadyreply": "={{ $json.labelIds[0] }}"
+          },
+          "matchingColumns": [
+            "thread id"
+          ],
+          "schema": [
+            {
+              "id": "thread id",
+              "displayName": "thread id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "recieve",
+              "displayName": "recieve",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "messageid",
+              "displayName": "messageid",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "alreadyreply",
+              "displayName": "alreadyreply",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "repley created",
+              "displayName": "repley created",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "bool",
+              "displayName": "bool",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "reply time",
+              "displayName": "reply time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "etc",
+              "displayName": "etc",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "etc1",
+              "displayName": "etc1",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "1aba92ba-073d-4abe-b9f9-f762473a5f1c",
+      "name": "Log to Tracking Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [
+        1424,
+        -128
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "rsWcFskPM2pJVrDc",
+          "name": "Google Sheets account 3"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        464,
+        0
+      ],
+      "id": "c02bf5fc-1bbb-4ff6-9bf1-70ba8561b0cc",
+      "name": "Wait Between Emails",
+      "webhookId": "b7c2a5ee-32e0-4f42-bb0d-19311b0b160f"
+    },
+    {
+      "parameters": {
+        "operation": "markAsRead",
+        "messageId": "={{ $json.messageid }}"
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        448,
+        -288
+      ],
+      "id": "fa104ff2-e050-45c2-ad19-ba9c491134af",
+      "name": "Mark a message as read",
+      "webhookId": "f9ef9258-6dc7-4b00-8548-ee522e9d6c6e",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "nhrygbAi2d4XyJHY",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        672,
+        -336
+      ],
+      "id": "a0f72d6f-81df-4ca0-a8e4-2904de5d79b3",
+      "name": "Merge1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "filter-unsent",
+              "leftValue": "={{ $json.alreadyreply }}",
+              "rightValue": "unsent",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "7663587b-8c7a-4e84-bb4e-0cc16d98cf6e",
+      "name": "Filter Unsent Emails",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2,
+      "position": [
+        624,
+        -96
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const currentDateTime = new Date().toISOString();\nconst emailSubject = \"Testing automation\";\nconst emailBody = `Hi Mr/Mrs,\n \n\n${$json.output}\n\nBest regards,\nMuhammad Abdullah\nFAST NUCES LAHORE\n0309-4561786`;\n\nreturn {\n  json: {\n    email: $json.email,\n    name: $json.name,\n    row_number: $json.row_number,\n    subject: emailSubject,\n    body: emailBody,\n    send_time: currentDateTime,\n    follow_up_count: $json.follow_up_count || 0,\n    status: 'sending'\n  }\n};"
+      },
+      "id": "5c57b116-1134-443c-90c0-aed6d7210a32",
+      "name": "Prepare Email Content1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1360,
+        -464
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Unread Emails",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Unread Emails": {
+      "main": [
+        [
+          {
+            "node": "Read Processed Emails",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Processed Emails": {
+      "main": [
+        [
+          {
+            "node": "Mark a message as read",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Generate AI Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate AI Reply": {
+      "main": [
+        [
+          {
+            "node": "Prepare Email Content1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Generate AI Reply",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Email Reply": {
+      "main": [
+        [
+          {
+            "node": "Log to Tracking Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log to Tracking Sheet": {
+      "main": [
+        [
+          {
+            "node": "Wait Between Emails",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark a message as read": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge1": {
+      "main": [
+        [
+          {
+            "node": "Filter Unsent Emails",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Unsent Emails": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Email Content1": {
+      "main": [
+        [
+          {
+            "node": "Send Email Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait Between Emails": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "0bdb50ef-e587-45a1-8028-63681716b201",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "065ad3bf3b1ce77676f08127f420ee6bcf85d7414cfe918d48444b7330cc3de8"
+  },
+  "id": "Kx2Zb7Y3oU71Pqty",
+  "tags": []
+}
