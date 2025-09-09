@@ -1,0 +1,571 @@
+{
+  "name": "cv sender",
+  "nodes": [
+    {
+      "parameters": {
+        "triggerTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        }
+      },
+      "id": "7f28bde0-74d7-4980-9bc5-8ed26fc57368",
+      "name": "Daily Email Trigger",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [
+        -896,
+        480
+      ],
+      "alwaysOutputData": true,
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "filter-unsent",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "unsent",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "f54cd4a4-2819-431b-a1bf-7d81119b078c",
+      "name": "Filter Unsent Emails",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2,
+      "position": [
+        -464,
+        480
+      ]
+    },
+    {
+      "parameters": {
+        "maxItems": 200
+      },
+      "id": "4b405f69-b6bb-45b7-b9c3-ebd9ea700209",
+      "name": "Limit to 200 Emails",
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        -240,
+        480
+      ],
+      "alwaysOutputData": true,
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const currentDateTime = new Date().toISOString();\nconst emailSubject = \"Application for job Opportunity\";\nconst emailBody = `Hi ${$json.name},\n\n\n${$json.output}\n\n\nBest regards,\nMuhammad Abdullah\nFAST\n0309-4561786`;\n\n\n\n\nreturn {\n  json: {\n    email: $json.email,\n    name: $json.name,\n    row_number: $json.row_number,\n    subject: emailSubject,\n    body: emailBody,\n    send_time: currentDateTime,\n    follow_up_count: $json.follow_up_count || 0,\n    status: 'sending'\n  }\n};"
+      },
+      "id": "27369695-eff7-4f78-b676-af279405a31e",
+      "name": "Prepare Email Content",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        256,
+        288
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "subject": "={{ $json.subject }}",
+        "message": "={{ $json.body }}",
+        "toList": [
+          "={{  $json.email  }}"
+        ],
+        "additionalFields": {
+          "attachmentsUi": {
+            "attachmentsBinary": [
+              {
+                "property": "={{ $json.output }}"
+              }
+            ]
+          }
+        }
+      },
+      "id": "15343d7b-4d44-47b5-87c1-5e0f1acd9075",
+      "name": "Send Email via Gmail",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 1,
+      "position": [
+        304,
+        528
+      ],
+      "alwaysOutputData": true,
+      "retryOnFail": false,
+      "notesInFlow": false,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "nhrygbAi2d4XyJHY",
+          "name": "Gmail account"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/16lVRvS1Yt_ps-Qz8jl6pbbv6KevCaQoC7FLw6YvRhY4/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/16lVRvS1Yt_ps-Qz8jl6pbbv6KevCaQoC7FLw6YvRhY4/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "email": "={{ $json.email }}",
+            "status": "sent"
+          },
+          "matchingColumns": [
+            "email"
+          ],
+          "schema": [
+            {
+              "id": "first_name",
+              "displayName": "first_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "last_name",
+              "displayName": "last_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "organization_name",
+              "displayName": "organization_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "5609687c-5a6c-493d-b4d4-320b6f050f2c",
+      "name": "Update Sent Status",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [
+        704,
+        336
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "JxpYP7v9Z0iyxybC",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/16lVRvS1Yt_ps-Qz8jl6pbbv6KevCaQoC7FLw6YvRhY4/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/16lVRvS1Yt_ps-Qz8jl6pbbv6KevCaQoC7FLw6YvRhY4/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "options": {}
+      },
+      "id": "803f35f9-ead8-45a5-b6d4-3450bceb2ab7",
+      "name": "Get Email List",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [
+        -688,
+        480
+      ],
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "notesInFlow": false,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "JxpYP7v9Z0iyxybC",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        464,
+        368
+      ],
+      "id": "f962edec-fbc3-4673-848c-5ab58bf0016a",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "amount": 10
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        592,
+        528
+      ],
+      "id": "1b51694b-3498-42a6-8b33-d650cb282d5e",
+      "name": "Wait",
+      "webhookId": "f24c7773-0d01-4736-9608-21ea7c0c0b83"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=I WANT THE JOB FROM THE COMPANY I will provide the name of the orginazation and the name of the owner or ceo  write the spialized mail for me {{ $json.organization_name }}\nthis is orginazation name that i provide up {{ $json.name }}\nand this is name of the ceo \n\n\nMuhammad Abdullah\n\nI am currently a student at FAST-NUCES Lahore, pursuing a degree in Software Engineering. I completed my intermediate FSc Pre-Engineering at Government College University Lahore, following my matriculation from Dar-e-Arqam, where I achieved outstanding academic results. I am deeply passionate about programming and dedicated to continuously improving my skills.\n\nWhile I am relatively new to C++, I have already completed several beginner-level projects, including a Banking System and a Hospital Management System in C++ (integrated with Qt for the frontend). I am also expanding my expertise in web development with knowledge of HTML and CSS. In addition, I have developed beginner-level projects in React.js, such as a Google Gemini Clone, a Tic Tac Toe game to strengthen my foundational concepts, and a Project Management App to further enhance my skills.\n\nmalikabdullah 1786@gmail.com\n\n03094561786\n\nLahore\n\nmuhammad-abdullah-676841206\n\nAbdullah24554\n\nEDUCATION\n\nFAST NUCES LAHORE\n\nSoftware engineer\n\nAugust 2024-August 2028\n\nGovernment college university Lahore\n\nIntermediate FSC pre engineering A+\n\nAugust 2022-July 2024\n\nPROJECTS\n\nGoogle Gemini Clone\n\nDecember 2024-January 2025\n\nBuilt a Google Gemini Clone using React.js to replicate key features such as real-time responses, dynamic Ul components, and a responsive, mobile-friendly design. Implemented efficient state management, component-based architecture, and integrated APIs to simulate conversational interactions. Focused on creating a smooth user experience with modern frontend best practices, including routing, conditional rendering, and optimized reusability of components. This project strengthened my skills in React fundamentals, hooks, event handling, and responsive web design. Through this project, I gained valuable experience in designing interactive applications and deepened my understanding of building scalable, maintainable codebases in a professional development environment.\n\nChat hot-deep seek API\n\nJanuary 2025-Feb 2025.\n\nDesigned and developed a chatbot powered by the DeepSeek API, focusing on delivering intelligent and context-aware responses within a dynamic frontend environment. Integrated the API using asynchronous JavaScript (fetch/axios) to handle real-time communication between the user interface and the backend services. Emphasized. building a responsive, intuitive chat UI using React.js, incorporating features like typing indicators, message history, and error handling. This project enhanced my skills in API integration, state management, asynchronous programming, and user experience design, while deepening my understanding of connecting frontend applications with powerful Al models to create interactive and scalable solutions,\n\nBank management system\n\nDec 2024-January 2025\n\nDeveloped an ATM Banking System using C++, simulating real-world banking operations such as account creation, balance inquiry, deposits, withdrawals, and fund transfers. Focused on creating an interactive, menu-driven console application with proper input validation, data storage using file handling, and basic security measures like PIN authentication. Implemented core programming concepts including control structures, loops, functions, and file I/O. This project strengthened my understanding of object-oriented programming (OOP) principles and helped build a strong foundation in logic building, error handling, and user-focused application development. It served as a critical step in advancing my C++ programming expertise.\n\nSKILLS\n\nJavaScript. Cpp, Html,React, CSS,Communication skills Analytical skills, Problem solving\n\nTeam collaboration skills\n\n\n\nonly right the body of the mail \n\nnot right this at last \\n\\nWarm regards,  \\n[Your Full Name]  \\n[Your Contact Information]\"\n} and not writ my name is in start \n\n\nalso add the oginazation name where needed in personal statment for job",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        -304,
+        0
+      ],
+      "id": "68ecbf08-d43d-4170-bbda-7ec1c6aa737b",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -256,
+        240
+      ],
+      "id": "adeee2a0-7a8e-44f0-aad3-c87bc45d7160",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "ht3yN3ksOuOZZ87L",
+          "name": "OpenAi account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -64,
+        560
+      ],
+      "id": "3556c57e-37f3-4964-99ee-8942445be132",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        112,
+        320
+      ],
+      "id": "a9ed1942-5d70-45a2-9383-00b7ef842925",
+      "name": "Merge2"
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "1cNK3QIeoX0_bQmWYsaiS4ub7LTX9rYnG",
+          "mode": "list",
+          "cachedResultName": "Muhammad_Abdullah.pdf",
+          "cachedResultUrl": "https://drive.google.com/file/d/1cNK3QIeoX0_bQmWYsaiS4ub7LTX9rYnG/view?usp=drivesdk"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        128,
+        -16
+      ],
+      "id": "d1ffd082-9d47-4007-bfa2-e316b60799b2",
+      "name": "Download file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "5Td6xc52PDvFMngM",
+          "name": "Google Drive account 2"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Daily Email Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Email List",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Unsent Emails": {
+      "main": [
+        [
+          {
+            "node": "Limit to 200 Emails",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit to 200 Emails": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Email Content": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send Email via Gmail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Email via Gmail": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          },
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Sent Status": {
+      "main": [
+        []
+      ]
+    },
+    "Get Email List": {
+      "main": [
+        [
+          {
+            "node": "Filter Unsent Emails",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Update Sent Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Merge2",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Download file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge2",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge2": {
+      "main": [
+        [
+          {
+            "node": "Prepare Email Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download file": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "a14e4050-f772-4742-ab47-781dc4cc2a9e",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "065ad3bf3b1ce77676f08127f420ee6bcf85d7414cfe918d48444b7330cc3de8"
+  },
+  "id": "Y0WoD0P5ezjquJVd",
+  "tags": []
+}

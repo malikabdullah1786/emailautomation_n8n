@@ -1,0 +1,568 @@
+{
+  "name": "automation for cv",
+  "nodes": [
+    {
+      "parameters": {
+        "triggerTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        }
+      },
+      "id": "6af267ce-0e7d-442a-aff4-50152be31ff3",
+      "name": "Daily Email Trigger2",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [
+        -1280,
+        304
+      ],
+      "alwaysOutputData": true,
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "filter-unsent",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "unsent",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "e77b0cca-9751-495d-918b-c0d70b0ffa5a",
+      "name": "Filter Unsent Emails2",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2,
+      "position": [
+        -848,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "maxItems": 200
+      },
+      "id": "fc6041e7-2c39-4217-ae57-b4eed09efc86",
+      "name": "Limit to 200 Emails2",
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        -624,
+        304
+      ],
+      "alwaysOutputData": true,
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const currentDateTime = new Date().toISOString();\nconst emailSubject = \"Application for Job Opportunity\";\nconst emailBody = `Hi ${$json.name},\n\n${$json.output}\n\n`;\n\n// Pass through the binary data\nreturn {\n  json: {\n    email: $json.email,\n    name: $json.name,\n    row_number: $json.row_number,\n    subject: emailSubject,\n    body: emailBody,\n    send_time: currentDateTime,\n    follow_up_count: $json.follow_up_count || 0,\n    status: 'sending'\n  },\n  binary: $binary\n};"
+      },
+      "id": "443d185d-39c3-4c4d-a832-8e0fad15d888",
+      "name": "Prepare Email Content2",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -128,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "subject": "={{ $json.subject }}",
+        "message": "={{ $json.body }}",
+        "toList": [
+          "={{ $json.email }}"
+        ],
+        "additionalFields": {
+          "attachmentsUi": {
+            "attachmentsBinary": [
+              {
+                "property": "resume"
+              }
+            ]
+          }
+        }
+      },
+      "id": "88004873-98db-41c7-b7ed-db7d74ad30f3",
+      "name": "Send Email via Gmail2",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 1,
+      "position": [
+        176,
+        224
+      ],
+      "alwaysOutputData": true,
+      "retryOnFail": false,
+      "notesInFlow": false,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "nhrygbAi2d4XyJHY",
+          "name": "Gmail account"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/16lVRvS1Yt_ps-Qz8jl6pbbv6KevCaQoC7FLw6YvRhY4/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/16lVRvS1Yt_ps-Qz8jl6pbbv6KevCaQoC7FLw6YvRhY4/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "email": "={{ $json.email }}",
+            "status": "sent"
+          },
+          "matchingColumns": [
+            "email"
+          ],
+          "schema": [
+            {
+              "id": "first_name",
+              "displayName": "first_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "last_name",
+              "displayName": "last_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "organization_name",
+              "displayName": "organization_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "65f2b607-6f2d-469c-a629-0bd315f15141",
+      "name": "Update Sent Status2",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [
+        464,
+        128
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "JxpYP7v9Z0iyxybC",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/16lVRvS1Yt_ps-Qz8jl6pbbv6KevCaQoC7FLw6YvRhY4/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/16lVRvS1Yt_ps-Qz8jl6pbbv6KevCaQoC7FLw6YvRhY4/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "options": {}
+      },
+      "id": "6ff0933d-0e67-4024-bcc0-a04c480f0019",
+      "name": "Get Email List2",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [
+        -1072,
+        304
+      ],
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "notesInFlow": false,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "JxpYP7v9Z0iyxybC",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 10
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        336,
+        336
+      ],
+      "id": "246948e8-c822-401e-b3b8-6f23ab82869b",
+      "name": "Wait2",
+      "webhookId": "f24c7773-0d01-4736-9608-21ea7c0c0b83"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=I WANT THE JOB FROM THE COMPANY. I will provide the name of the organization and the name of the owner or CEO. Write a specialized mail for me.\n\nOrganization: {{ $json.organization_name }}\nCEO/Contact Name: {{ $json.name }}\n\nAbout me:\nMuhammad Abdullah\nI am currently a student at FAST-NUCES Lahore, pursuing a degree in Software Engineering. I completed my intermediate FSc Pre-Engineering at Government College University Lahore, following my matriculation from Dar-e-Arqam, where I achieved outstanding academic results. I am deeply passionate about programming and dedicated to continuously improving my skills.\n\nWhile I am relatively new to C++, I have already completed several beginner-level projects, including a Banking System and a Hospital Management System in C++ (integrated with Qt for the frontend). I am also expanding my expertise in web development with knowledge of HTML and CSS. In addition, I have developed beginner-level projects in React.js, such as a Google Gemini Clone, a Tic Tac Toe game to strengthen my foundational concepts, and a Project Management App to further enhance my skills.\n\n\nEDUCATION:\nFAST NUCES LAHORE - Software Engineering (August 2024-August 2028)\nGovernment College University Lahore - Intermediate FSC Pre-Engineering A+ (August 2022-July 2024)\n\nPROJECTS:\n1. Google Gemini Clone (December 2024-January 2025)\n2. Chat Bot with DeepSeek API (January 2025-Feb 2025)\n3. Bank Management System (Dec 2024-January 2025)\n\nSKILLS: JavaScript, C++, HTML, React, CSS, Communication skills, Analytical skills, Problem solving, Team collaboration skills\n\n",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        -688,
+        32
+      ],
+      "id": "7bc803d9-730d-4934-8bbd-e0299c50c1e4",
+      "name": "AI Agent2"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -640,
+        224
+      ],
+      "id": "e344c5cb-db98-4862-a7d6-4926a603ee1f",
+      "name": "OpenAI Chat Model2",
+      "credentials": {
+        "openAiApi": {
+          "id": "ht3yN3ksOuOZZ87L",
+          "name": "OpenAi account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -448,
+        304
+      ],
+      "id": "0a6ab53c-d6e4-42d4-ae7e-d05e8fee2204",
+      "name": "Loop Over Items2"
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "1cNK3QIeoX0_bQmWYsaiS4ub7LTX9rYnG",
+          "mode": "list",
+          "cachedResultName": "Muhammad_Abdullah.pdf",
+          "cachedResultUrl": "https://drive.google.com/file/d/1cNK3QIeoX0_bQmWYsaiS4ub7LTX9rYnG/view?usp=drivesdk"
+        },
+        "options": {
+          "binaryPropertyName": "resume"
+        }
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -272,
+        -16
+      ],
+      "id": "bb0d6179-279d-45a0-8c5e-8469df26aac1",
+      "name": "Download Resume1",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "5Td6xc52PDvFMngM",
+          "name": "Google Drive account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        48,
+        128
+      ],
+      "id": "8cd93eff-7896-42dd-b575-86080f399a5b",
+      "name": "Merge All Data1"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        288,
+        -48
+      ],
+      "id": "b50a54e7-a340-4ab6-b114-fe630e927e4f",
+      "name": "Merge"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Daily Email Trigger2": {
+      "main": [
+        [
+          {
+            "node": "Get Email List2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Unsent Emails2": {
+      "main": [
+        [
+          {
+            "node": "Limit to 200 Emails2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit to 200 Emails2": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Email Content2": {
+      "main": [
+        [
+          {
+            "node": "Send Email via Gmail2",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Email via Gmail2": {
+      "main": [
+        [
+          {
+            "node": "Wait2",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Get Email List2": {
+      "main": [
+        [
+          {
+            "node": "Filter Unsent Emails2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait2": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent2": {
+      "main": [
+        [
+          {
+            "node": "Merge All Data1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent2",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items2": {
+      "main": [
+        [],
+        [
+          {
+            "node": "AI Agent2",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Download Resume1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Resume1": {
+      "main": [
+        [
+          {
+            "node": "Merge All Data1",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge All Data1": {
+      "main": [
+        [
+          {
+            "node": "Prepare Email Content2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Update Sent Status2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "b8cb451e-b803-4111-ad73-eb0680750266",
+  "meta": {
+    "instanceId": "065ad3bf3b1ce77676f08127f420ee6bcf85d7414cfe918d48444b7330cc3de8"
+  },
+  "id": "DX8wTogFUsQ54xWw",
+  "tags": []
+}
