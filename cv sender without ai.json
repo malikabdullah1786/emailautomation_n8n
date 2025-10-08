@@ -1,0 +1,438 @@
+{
+  "name": "cv sender without ai",
+  "nodes": [
+    {
+      "parameters": {
+        "triggerTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        }
+      },
+      "id": "9655b465-9e3f-4280-a4ba-68847cddbef2",
+      "name": "Daily Email Trigger1",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [
+        -96,
+        48
+      ],
+      "alwaysOutputData": true,
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "filter-unsent",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "unsent",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "fe116efd-739c-412a-9505-5f07db4a53c2",
+      "name": "Filter Unsent Emails1",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2,
+      "position": [
+        464,
+        64
+      ]
+    },
+    {
+      "parameters": {
+        "maxItems": 200
+      },
+      "id": "629baded-7e5c-4e8a-bab4-99fc62a5d63a",
+      "name": "Limit to 200 Emails1",
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        640,
+        48
+      ],
+      "alwaysOutputData": true,
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "subject": "={{ $json.subject }}",
+        "includeHtml": true,
+        "htmlMessage": "={{ $json.body }}",
+        "message": "=",
+        "toList": [
+          "={{ $json.email }}"
+        ],
+        "additionalFields": {
+          "attachmentsUi": {
+            "attachmentsBinary": [
+              {
+                "property": "cv_attachment"
+              }
+            ]
+          }
+        }
+      },
+      "id": "2162cf46-77b4-4eab-9aca-c511a1bcc50e",
+      "name": "Send Email via Gmail1",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 1,
+      "position": [
+        1648,
+        48
+      ],
+      "alwaysOutputData": true,
+      "retryOnFail": false,
+      "notesInFlow": false,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "nhrygbAi2d4XyJHY",
+          "name": "Gmail account"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/16lVRvS1Yt_ps-Qz8jl6pbbv6KevCaQoC7FLw6YvRhY4/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/16lVRvS1Yt_ps-Qz8jl6pbbv6KevCaQoC7FLw6YvRhY4/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "email": "={{ $('Prepare Email Content1').item.json.email }}",
+            "status": "sent"
+          },
+          "matchingColumns": [
+            "email"
+          ],
+          "schema": [
+            {
+              "id": "first_name",
+              "displayName": "first_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "last_name",
+              "displayName": "last_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "organization_name",
+              "displayName": "organization_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "4fa3e5cd-e62c-42f7-a409-8101c228988f",
+      "name": "Update Sent Status1",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [
+        1872,
+        48
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "JxpYP7v9Z0iyxybC",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/16lVRvS1Yt_ps-Qz8jl6pbbv6KevCaQoC7FLw6YvRhY4/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/16lVRvS1Yt_ps-Qz8jl6pbbv6KevCaQoC7FLw6YvRhY4/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "options": {}
+      },
+      "id": "5bf5b683-8235-455f-9529-30de244cf260",
+      "name": "Get Email List1",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [
+        192,
+        48
+      ],
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "notesInFlow": false,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "JxpYP7v9Z0iyxybC",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 10
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2032,
+        224
+      ],
+      "id": "edc6a667-e195-4328-ab08-1d1df6c6b632",
+      "name": "Wait1",
+      "webhookId": "f24c7773-0d01-4736-9608-21ea7c0c0b83"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        928,
+        48
+      ],
+      "id": "8c51f655-5ffa-4fc9-baed-0da0c2c30178",
+      "name": "Loop Over Items1"
+    },
+    {
+      "parameters": {
+        "url": "=https://drive.google.com/uc?export=download&id=1xEpQXjtY5wIMs5O6lOjXyTuwYxZxJGEc",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "name": "Download CV from URL2",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        1152,
+        48
+      ],
+      "typeVersion": 4.2,
+      "id": "1ad4059c-1fca-44ef-81ec-faa7a679fb26"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const currentDateTime = new Date().toISOString();\nconst emailSubject = `Exploring relevant opportunities`;\nconst emailBody = `\n<p>Dear ${$json['first_name']},</p>\n\n<p>I am writing to express my interest in a potential data engineer role at ${$json['organization/name']}.</p>\n\n<p>I am enthusiastic about the opportunity to support ${$json['organization/name']}'s goals through strategic advocacy and relationship-building. I would welcome the chance to discuss how my skills can contribute to your team's success.</p>\n\n<p>Best regards,<br>Asad Naeem</p>\n`;\n\n// Get the downloaded CV data from the previous node\nconst cvData = $('Download CV from URL2').first().binary.data;\n\nreturn {\n  json: {\n    email: $json.email,\n    name: $json.name,\n    row_number: $json.row_number,\n    subject: emailSubject,\n    body: emailBody,\n    send_time: currentDateTime,\n    follow_up_count: $json.follow_up_count || 0,\n    status: 'sending'\n  },\n  binary: {\n    cv_attachment: cvData\n  }\n};"
+      },
+      "name": "Prepare Email Content1",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        1424,
+        48
+      ],
+      "typeVersion": 2,
+      "id": "2284fa52-8177-42f4-9563-49807770e846"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Daily Email Trigger1": {
+      "main": [
+        [
+          {
+            "node": "Get Email List1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Unsent Emails1": {
+      "main": [
+        [
+          {
+            "node": "Limit to 200 Emails1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit to 200 Emails1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Email via Gmail1": {
+      "main": [
+        [
+          {
+            "node": "Update Sent Status1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Wait1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Email List1": {
+      "main": [
+        [
+          {
+            "node": "Filter Unsent Emails1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items1": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Download CV from URL2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download CV from URL2": {
+      "main": [
+        [
+          {
+            "node": "Prepare Email Content1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Email Content1": {
+      "main": [
+        [
+          {
+            "node": "Send Email via Gmail1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "70c9136f-96e0-469e-bd31-d9265544c0ad",
+  "meta": {
+    "instanceId": "065ad3bf3b1ce77676f08127f420ee6bcf85d7414cfe918d48444b7330cc3de8"
+  },
+  "id": "clYL4TR1gtibLaV6",
+  "tags": []
+}

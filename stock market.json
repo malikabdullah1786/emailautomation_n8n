@@ -1,0 +1,605 @@
+{
+  "name": "stock market",
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "// Limit Gainers History to most recent 5 rows\nconst items = $input.all().map(i => i.json || {});\nif (!items || items.length === 0) return [];\n\n// sort by timestamp (newest first) if timestamp exists; otherwise keep order\nitems.sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));\n\nconst limited = items.slice(0, 5);\nreturn limited.map(r => ({ json: r }));"
+      },
+      "name": "Limit Gainers History to 5",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1728,
+        -176
+      ],
+      "id": "b2b8d157-64e1-4e77-a067-a2dfcd027ec7"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Limit Losers History to most recent 5 rows\nconst items = $input.all().map(i => i.json || {});\nif (!items || items.length === 0) return [];\n\nitems.sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));\n\nconst limited = items.slice(0, 5);\nreturn limited.map(r => ({ json: r }));"
+      },
+      "name": "Limit Losers History to 5",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1696,
+        80
+      ],
+      "id": "56cfa719-41d0-4e29-acd6-e3772584c9aa"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 10
+            }
+          ]
+        }
+      },
+      "name": "Schedule Every 10 Min3",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -2688,
+        -32
+      ],
+      "id": "f5a49c98-6f0a-4697-9127-b0c773e553f3"
+    },
+    {
+      "parameters": {
+        "url": "https://www.webull.com/quote/us/gainers/1d",
+        "options": {}
+      },
+      "name": "Fetch Gainers Page3",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        -2464,
+        -128
+      ],
+      "id": "60de5fd5-7db4-420b-ac2c-fccf1252cbc8"
+    },
+    {
+      "parameters": {
+        "url": "https://www.webull.com/quote/us/dropers",
+        "options": {}
+      },
+      "name": "Fetch Losers Page3",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        -2464,
+        64
+      ],
+      "id": "e259e107-e1ec-4586-8210-d63d49c507e7"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combinationMode": "mergeByPosition",
+        "options": {}
+      },
+      "name": "Merge Pages3",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2.1,
+      "position": [
+        -2256,
+        -32
+      ],
+      "id": "dca45a8c-9277-4b86-af48-e6333a5efa3e"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse HTML and generate stock data\nconst items = $input.all();\nconst gainersHTML = items[0]?.json?.body || '';\nconst losersHTML = items[1]?.json?.body || '';\n\n// NOTE: This is the mock generator you had; it produces both gainers and losers top-5 arrays.\nconst timestamp = new Date().toISOString();\nconst baseGainers = [\n  { symbol: \"NVDA\", company_name: \"NVIDIA Corp\", price: 450.25, change_percent: 8.5, volume: 5000000 },\n  { symbol: \"AMD\", company_name: \"Advanced Micro Devices\", price: 120.50, change_percent: 6.2, volume: 3000000 },\n  { symbol: \"TSLA\", company_name: \"Tesla Inc\", price: 245.75, change_percent: 5.8, volume: 8000000 },\n  { symbol: \"AAPL\", company_name: \"Apple Inc\", price: 178.30, change_percent: 4.5, volume: 6000000 },\n  { symbol: \"MSFT\", company_name: \"Microsoft Corp\", price: 380.90, change_percent: 3.9, volume: 4000000 }\n];\n\nconst baseLosers = [\n  { symbol: \"META\", company_name: \"Meta Platforms\", price: 320.15, change_percent: -5.2, volume: 7000000 },\n  { symbol: \"NFLX\", company_name: \"Netflix Inc\", price: 450.80, change_percent: -4.8, volume: 2500000 },\n  { symbol: \"DIS\", company_name: \"Walt Disney Co\", price: 95.40, change_percent: -3.5, volume: 4500000 },\n  { symbol: \"PYPL\", company_name: \"PayPal Holdings\", price: 65.25, change_percent: -3.2, volume: 3500000 },\n  { symbol: \"INTC\", company_name: \"Intel Corp\", price: 42.10, change_percent: -2.9, volume: 5500000 }\n];\n\n// Add small random variations to simulate real runs\nconst gainers = baseGainers.map((stock, idx) => ({\n  ...stock,\n  price: +(stock.price + (Math.random() - 0.5) * 0.1).toFixed(2),\n  change_percent: +(stock.change_percent + (Math.random() - 0.5) * 0.5).toFixed(2),\n  rank: idx + 1\n}));\n\nconst losers = baseLosers.map((stock, idx) => ({\n  ...stock,\n  price: +(stock.price + (Math.random() - 0.5) * 0.1).toFixed(2),\n  change_percent: +(stock.change_percent + (Math.random() - 0.5) * 0.5).toFixed(2),\n  rank: idx + 1\n}));\n\n// Occasionally shuffle positions to create changes\nif (Math.random() > 0.6) {\n  const arr = Math.random() > 0.5 ? gainers : losers;\n  const idx1 = Math.floor(Math.random() * 5);\n  let idx2 = Math.floor(Math.random() * 5);\n  while (idx1 === idx2) { idx2 = Math.floor(Math.random() * 5); }\n  [arr[idx1], arr[idx2]] = [arr[idx2], arr[idx1]];\n  arr.forEach((s, i) => s.rank = i + 1);\n}\n\nconst output = {\n  gainers: gainers.map(g => ({ ...g, price: g.price.toFixed(2), change_percent: g.change_percent.toFixed(2) })),\n  losers: losers.map(l => ({ ...l, price: l.price.toFixed(2), change_percent: l.change_percent.toFixed(2) })),\n  timestamp: timestamp\n};\n\nreturn [{ json: output }];"
+      },
+      "name": "Parse Stock Data3",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2032,
+        -32
+      ],
+      "id": "468b3616-342a-471d-8049-4acc159444a6"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/11vIn0Hh6TQmdwu6C-HgP140za0Mx25Jfs-6eGbCnCW8/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/11vIn0Hh6TQmdwu6C-HgP140za0Mx25Jfs-6eGbCnCW8/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "options": {}
+      },
+      "name": "Read Gainers History3",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.2,
+      "position": [
+        -1888,
+        -176
+      ],
+      "id": "f1a7c82f-0029-4496-9c2f-b88ad88c2a54",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "vQnj99Zx4b6Q4dtK",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1bVMF4jCbpAGBOxGY0pkQphCce36yZb6ePZfA62ej4eg/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1bVMF4jCbpAGBOxGY0pkQphCce36yZb6ePZfA62ej4eg/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "options": {}
+      },
+      "name": "Read Losers History3",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.2,
+      "position": [
+        -1872,
+        80
+      ],
+      "id": "a307ef10-e6fe-424c-8f1c-ad6d5c3aaf80",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "vQnj99Zx4b6Q4dtK",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Combine all inputs: current parsed data (single item) and the limited history rows\nconst items = $input.all();\nlet currentData = null;\nconst previousGainers = [];\nconst previousLosers = [];\n\nitems.forEach(item => {\n  const data = item.json;\n  if (!data) return;\n\n  // If it looks like the parsed snapshot (has gainers/losers arrays), use as currentData\n  if (data.gainers && data.losers && Array.isArray(data.gainers) && Array.isArray(data.losers)) {\n    currentData = data;\n    return;\n  }\n\n  // Otherwise treat as a history row (single row with symbol, change_percent etc.)\n  if (data.symbol && data.change_percent !== undefined && data.rank !== undefined) {\n    // decide by sign of change_percent whether it is gainers or losers row\n    const pct = parseFloat(data.change_percent);\n    if (!isNaN(pct) && pct >= 0) previousGainers.push(data);\n    else if (!isNaN(pct) && pct < 0) previousLosers.push(data);\n  }\n});\n\nreturn [{ json: { currentData: currentData, previousGainers: previousGainers, previousLosers: previousLosers } }];"
+      },
+      "name": "Combine All Data3",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1312,
+        -80
+      ],
+      "id": "3573f267-25cf-45fe-bb2e-a4af53b59eae"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Detect changes between current top-5 and limited previous 5 rows\nconst inputItem = $input.all()[0];\nif (!inputItem || !inputItem.json) {\n  return [{ json: { currentData: null, changes: { gainers: [], losers: [], hasChanges: false }, timestamp: new Date().toISOString() } }];\n}\n\nconst currentData = inputItem.json.currentData;\nconst previousGainers = inputItem.json.previousGainers || [];\nconst previousLosers = inputItem.json.previousLosers || [];\nconst timestamp = currentData?.timestamp || new Date().toISOString();\n\nif (!currentData || !Array.isArray(currentData.gainers) || !Array.isArray(currentData.losers)) {\n  return [{ json: { currentData: null, changes: { gainers: [], losers: [], hasChanges: false }, timestamp } }];\n}\n\n// Build latest position map from previous limited history\nfunction latestPositionMap(historyRows) {\n  const map = {};\n  // assume historyRows are rows; if multiple timestamps for same symbol exist we keep newest (they were limited by timestamp earlier)\n  historyRows.forEach(r => {\n    const sym = r.symbol;\n    const rank = parseInt(r.rank);\n    if (!sym || isNaN(rank)) return;\n    if (!map[sym] || new Date(r.timestamp || 0) > new Date(map[sym].timestamp || 0)) {\n      map[sym] = { rank: rank, timestamp: r.timestamp };\n    }\n  });\n  return map;\n}\n\nconst prevGMap = latestPositionMap(previousGainers);\nconst prevLMap = latestPositionMap(previousLosers);\n\nconst changes = { gainers: [], losers: [], hasChanges: false };\n\n// Check gainers current top-5\ncurrentData.gainers.forEach(stock => {\n  const symbol = stock.symbol;\n  const curRank = parseInt(stock.rank);\n  const curPct = parseFloat(stock.change_percent);\n  const prev = prevGMap[symbol];\n  if (!prev) {\n    // new entry in top5\n    changes.gainers.push({ type: 'NEW_ENTRY', symbol, company_name: stock.company_name, current_rank: curRank, change_percent: curPct.toFixed(2), message: `🆕 ${symbol} entered Top 5 Gainers at #${curRank} (${curPct.toFixed(2)}%)` });\n    changes.hasChanges = true;\n  } else if (prev.rank !== curRank) {\n    const dir = prev.rank > curRank ? 'UP' : 'DOWN';\n    const arrow = prev.rank > curRank ? '⬆️' : '⬇️';\n    changes.gainers.push({ type: 'POSITION_CHANGE', symbol, company_name: stock.company_name, previous_rank: prev.rank, current_rank: curRank, change_percent: curPct.toFixed(2), message: `${arrow} ${symbol} moved ${dir} from #${prev.rank} to #${curRank}` });\n    changes.hasChanges = true;\n  }\n});\n\n// Check losers current top-5\ncurrentData.losers.forEach(stock => {\n  const symbol = stock.symbol;\n  const curRank = parseInt(stock.rank);\n  const curPct = parseFloat(stock.change_percent);\n  const prev = prevLMap[symbol];\n  if (!prev) {\n    changes.losers.push({ type: 'NEW_ENTRY', symbol, company_name: stock.company_name, current_rank: curRank, change_percent: curPct.toFixed(2), message: `🆕 ${symbol} entered Top 5 Losers at #${curRank} (${curPct.toFixed(2)}%)` });\n    changes.hasChanges = true;\n  } else if (prev.rank !== curRank) {\n    const dir = prev.rank > curRank ? 'UP' : 'DOWN';\n    const arrow = prev.rank > curRank ? '⬆️' : '⬇️';\n    changes.losers.push({ type: 'POSITION_CHANGE', symbol, company_name: stock.company_name, previous_rank: prev.rank, current_rank: curRank, change_percent: curPct.toFixed(2), message: `${arrow} ${symbol} moved ${dir} from #${prev.rank} to #${curRank}` });\n    changes.hasChanges = true;\n  }\n});\n\nreturn [{ json: { currentData, changes, timestamp } }];"
+      },
+      "name": "Detect Changes3",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1136,
+        -112
+      ],
+      "id": "caa30ce1-dac3-4bea-8f04-cafae1195d38"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.changes.hasChanges }}",
+              "value2": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "If Changes Exist3",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -912,
+        -112
+      ],
+      "id": "64fb2d45-b225-4efe-a6e7-dc010e566560"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Build a formatted Telegram message\nconst inputItem = $input.all()[0];\nif (!inputItem || !inputItem.json) return { json: { message: 'No data' } };\nconst data = inputItem.json;\nconst changes = data.changes || { gainers: [], losers: [] };\nconst currentData = data.currentData || { gainers: [], losers: [] };\nlet message = `📊 STOCK TOP-5 CHANGES\\n`;\nmessage += `🕒 Time: ${new Date(data.timestamp || new Date().toISOString()).toLocaleString()}\\n\\n`;\n\nif (changes.gainers.length > 0) {\n  message += '📈 TOP GAINERS CHANGES:\\n';\n  changes.gainers.forEach(c => { message += `${c.message}\\n`; });\n  message += '\\n';\n}\n\nif (changes.losers.length > 0) {\n  message += '📉 TOP LOSERS CHANGES:\\n';\n  changes.losers.forEach(c => { message += `${c.message}\\n`; });\n  message += '\\n';\n}\n\nif (currentData.gainers && currentData.gainers.length > 0) {\n  message += '─'.repeat(30) + '\\n';\n  message += '📊 Current Top 5 Gainers:\\n';\n  currentData.gainers.forEach(s => {\n    const pct = parseFloat(s.change_percent);\n    const sign = pct >= 0 ? '+' : '';\n    message += `${s.rank}. ${s.symbol} ${sign}${pct.toFixed(2)}%\\n`;\n  });\n  message += '\\n';\n}\n\nif (currentData.losers && currentData.losers.length > 0) {\n  message += '📊 Current Top 5 Losers:\\n';\n  currentData.losers.forEach(s => {\n    message += `${s.rank}. ${s.symbol} ${parseFloat(s.change_percent).toFixed(2)}%\\n`;\n  });\n  message += '\\n';\n}\n\nreturn { json: { message } };"
+      },
+      "name": "Format Alert3",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -464,
+        -208
+      ],
+      "id": "66e259f6-c4fd-4646-a055-9bece42cf2a5"
+    },
+    {
+      "parameters": {
+        "chatId": "7669009673",
+        "text": "={{ $json.message }}",
+        "additionalFields": {}
+      },
+      "name": "Send Telegram3",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -256,
+        -208
+      ],
+      "id": "2e434d90-da9d-4895-8d6b-b7c7d5a6e29e",
+      "webhookId": "014f53c9-c7d6-4031-86b5-61813b564707",
+      "credentials": {
+        "telegramApi": {
+          "id": "r2KGhsGgZXj8dXSM",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Split gainers - create one item per current gainer row for Save Gainers2\nconst inputItem = $input.all()[0];\nif (!inputItem || !inputItem.json || !inputItem.json.currentData) return [];\nconst data = inputItem.json.currentData;\nconst timestamp = data.timestamp || new Date().toISOString();\nconst items = [];\n(data.gainers || []).forEach(stock => {\n  items.push({ json: { timestamp, symbol: stock.symbol, company_name: stock.company_name, price: stock.price, change_percent: stock.change_percent, volume: stock.volume, rank: stock.rank } });\n});\nreturn items;"
+      },
+      "name": "Split Gainers3",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -688,
+        -16
+      ],
+      "id": "15702b7b-20e1-430c-a4f7-919d8a38dfcf"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Split losers - create one item per current loser row for Save Losers2\nconst inputItem = $input.all()[0];\nif (!inputItem || !inputItem.json || !inputItem.json.currentData) return [];\nconst data = inputItem.json.currentData;\nconst timestamp = data.timestamp || new Date().toISOString();\nconst items = [];\n(data.losers || []).forEach(stock => {\n  items.push({ json: { timestamp, symbol: stock.symbol, company_name: stock.company_name, price: stock.price, change_percent: stock.change_percent, volume: stock.volume, rank: stock.rank } });\n});\nreturn items;"
+      },
+      "name": "Split Losers3",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -688,
+        192
+      ],
+      "id": "0bb8002c-efc1-43a9-abbb-439c6cfc9fbc"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/11vIn0Hh6TQmdwu6C-HgP140za0Mx25Jfs-6eGbCnCW8/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/11vIn0Hh6TQmdwu6C-HgP140za0Mx25Jfs-6eGbCnCW8/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "timestamp": "={{ $json.timestamp }}",
+            "symbol": "={{ $json.symbol }}",
+            "company_name": "={{ $json.company_name }}",
+            "price": "={{ $json.price }}",
+            "change_percent": "={{ $json.change_percent }}",
+            "volume": "={{ $json.volume }}",
+            "rank": "={{ $json.rank }}"
+          }
+        },
+        "options": {}
+      },
+      "name": "Save Gainers3",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.2,
+      "position": [
+        -464,
+        -16
+      ],
+      "id": "7fee74ad-54c6-41bd-a5ae-1bb30371b81c",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "8n97pKhe8LpHJNTZ",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1bVMF4jCbpAGBOxGY0pkQphCce36yZb6ePZfA62ej4eg/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1bVMF4jCbpAGBOxGY0pkQphCce36yZb6ePZfA62ej4eg/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "timestamp": "={{ $json.timestamp }}",
+            "symbol": "={{ $json.symbol }}",
+            "company_name": "={{ $json.company_name }}",
+            "price": "={{ $json.price }}",
+            "change_percent": "={{ $json.change_percent }}",
+            "volume": "={{ $json.volume }}",
+            "rank": "={{ $json.rank }}"
+          }
+        },
+        "options": {}
+      },
+      "name": "Save Losers3",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.2,
+      "position": [
+        -464,
+        192
+      ],
+      "id": "dd9be80d-1ca0-4bf9-aedb-76a5b6b3f09a",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "8n97pKhe8LpHJNTZ",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "name": "No Changes - Stop3",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -736,
+        -448
+      ],
+      "id": "db56b080-b17b-4beb-b5c0-d14f46c7c0bc"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "numberInputs": 3,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -1520,
+        -80
+      ],
+      "id": "33d77ac4-48d4-4076-b761-ce5778c841f6",
+      "name": "Merge2"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Limit Gainers History to 5": {
+      "main": [
+        [
+          {
+            "node": "Merge2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit Losers History to 5": {
+      "main": [
+        [
+          {
+            "node": "Merge2",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Schedule Every 10 Min3": {
+      "main": [
+        [
+          {
+            "node": "Fetch Gainers Page3",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Fetch Losers Page3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Gainers Page3": {
+      "main": [
+        [
+          {
+            "node": "Merge Pages3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Losers Page3": {
+      "main": [
+        [
+          {
+            "node": "Merge Pages3",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Pages3": {
+      "main": [
+        [
+          {
+            "node": "Parse Stock Data3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Stock Data3": {
+      "main": [
+        [
+          {
+            "node": "Read Gainers History3",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Read Losers History3",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge2",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Read Gainers History3": {
+      "main": [
+        [
+          {
+            "node": "Limit Gainers History to 5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Losers History3": {
+      "main": [
+        [
+          {
+            "node": "Limit Losers History to 5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Combine All Data3": {
+      "main": [
+        [
+          {
+            "node": "Detect Changes3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Detect Changes3": {
+      "main": [
+        [
+          {
+            "node": "If Changes Exist3",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Split Gainers3",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Split Losers3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Changes Exist3": {
+      "main": [
+        [
+          {
+            "node": "Format Alert3",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Changes - Stop3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Alert3": {
+      "main": [
+        [
+          {
+            "node": "Send Telegram3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Gainers3": {
+      "main": [
+        [
+          {
+            "node": "Save Gainers3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Losers3": {
+      "main": [
+        [
+          {
+            "node": "Save Losers3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge2": {
+      "main": [
+        [
+          {
+            "node": "Combine All Data3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "de1af0e2-5556-4355-af72-7ac6be08c430",
+  "meta": {
+    "instanceId": "848afde39e98b8f37984a95650d144eb2ba76a2f509e7d7b07292a155fd34a7f"
+  },
+  "id": "Cwm3juiXEskfIiNL",
+  "tags": []
+}

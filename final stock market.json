@@ -1,0 +1,839 @@
+{
+  "name": "final stock market",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 10
+            }
+          ]
+        }
+      },
+      "name": "Schedule Every 10 Min",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -4144,
+        -528
+      ],
+      "id": "d64f4828-4d5a-4f62-9823-19e4d719d886"
+    },
+    {
+      "parameters": {
+        "url": "https://www.webull.com/quote/us/gainers/1d",
+        "options": {}
+      },
+      "name": "Fetch Gainers Page",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        -3920,
+        -624
+      ],
+      "id": "c1c3b2a6-3725-4209-8f5e-574e2317d049"
+    },
+    {
+      "parameters": {
+        "url": "https://www.webull.com/quote/us/dropers",
+        "options": {}
+      },
+      "name": "Fetch Losers Page",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        -3920,
+        -432
+      ],
+      "id": "6b0d5765-c30a-4c00-91c6-2fe65ae0a271"
+    },
+    {
+      "parameters": {
+        "html": "={{ $json.data }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.markdown",
+      "typeVersion": 1,
+      "position": [
+        -3696,
+        -624
+      ],
+      "id": "88fac567-a8b5-4651-800d-914d9e2f6768",
+      "name": "Markdown Gainers"
+    },
+    {
+      "parameters": {
+        "html": "={{ $json.data }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.markdown",
+      "typeVersion": 1,
+      "position": [
+        -3696,
+        -432
+      ],
+      "id": "f08ce587-2adb-40b0-a82c-f518c6cc43ea",
+      "name": "Markdown Losers"
+    },
+    {
+      "parameters": {
+        "jsCode": "const markdown = $input.first().json.data || '';\nconst truncated = markdown.substring(0, 2000);\nreturn [{ json: { truncated_markdown: truncated } }];"
+      },
+      "name": "Truncate Markdown Gainers",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        -3472,
+        -624
+      ],
+      "typeVersion": 2,
+      "id": "69d29bf8-e6f8-4532-b311-9693c55b82c2"
+    },
+    {
+      "parameters": {
+        "jsCode": "const markdown = $input.first().json.data || '';\nconst truncated = markdown.substring(0, 2000);\nreturn [{ json: { truncated_markdown: truncated } }];"
+      },
+      "name": "Truncate Markdown Losers",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        -3472,
+        -432
+      ],
+      "typeVersion": 2,
+      "id": "04c1df00-d09e-41f5-91a1-16c1e6020cc8"
+    },
+    {
+      "parameters": {
+        "jsCode": "const markdown = $json[\"truncated_markdown\"] || \"\";\n\nfunction extractTopGainers(markdown, topN = 5) {\n  const blocks = markdown\n    .split(/\\n\\[\\]\\(https:\\/\\/www\\.webull\\.com\\/quote\\/[^\\)]+\\)\\n/)\n    .slice(1);\n\n  const gainers = blocks.map(block => {\n    const lines = block.split('\\n').map(l => l.trim()).filter(Boolean);\n    const obj = {\n      name: lines[0] || null,\n      symbol: lines[1] || null,\n      change_percent: lines.find(l => /^[\\s]*[+\\-]?\\d+(\\.\\d+)?%$/.test(l.trim())) || null,\n      last_price: lines[3] || null,\n      high: lines[4] || null,\n      low: lines[5] || null,\n      volume: lines[6] || null,\n      range_percent: lines[7] || null,\n      pe_ratio: lines[8] || null,\n      market_cap: lines[9] || null\n    };\n    return { json: obj };\n  });\n  return gainers.slice(0, topN);\n}\n\nreturn extractTopGainers($input.first().json.truncated_markdown, 5);"
+      },
+      "name": "Parse Top Gainers",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -3248,
+        -624
+      ],
+      "id": "0caf0462-0251-4d36-bc3f-461c90bfc476"
+    },
+    {
+      "parameters": {
+        "jsCode": "const markdown = $json[\"truncated_markdown\"] || \"\";\n\nfunction extractTopLosers(markdown, topN = 5) {\n  const blocks = markdown\n    .split(/\\n\\[\\]\\(https:\\/\\/www\\.webull\\.com\\/quote\\/[^\\)]+\\)\\n/)\n    .slice(1);\n\n  const losers = blocks.map(block => {\n    const lines = block.split('\\n').map(l => l.trim()).filter(Boolean);\n    const obj = {\n      name: lines[0] || null,\n      symbol: lines[1] || null,\n      change_percent: lines.find(l => /^[\\s]*[+\\-]?\\d+(\\.\\d+)?%$/.test(l.trim())) || null,\n      last_price: lines[3] || null,\n      high: lines[4] || null,\n      low: lines[5] || null,\n      volume: lines[6] || null,\n      range_percent: lines[7] || null,\n      pe_ratio: lines[8] || null,\n      market_cap: lines[9] || null\n    };\n    return { json: obj };\n  });\n  return losers.slice(0, topN);\n}\n\nreturn extractTopLosers(markdown, 5);"
+      },
+      "name": "Parse Top Losers",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -3248,
+        -432
+      ],
+      "id": "102cb7d4-b10b-4267-a8ba-d5c9a747355c"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format current gainers message\nconst gainers = $input.all();\nlet message = \"📈 *TOP 5 GAINERS*\\n\\n\";\n\ngainers.forEach((item, idx) => {\n  const d = item.json;\n  message += `${idx + 1}. *${d.symbol}* - ${d.name}\\n`;\n  message += `   Change: ${d.change_percent} | Price: ${d.last_price}\\n`;\n  message += `   Volume: ${d.volume}\\n\\n`;\n});\n\nmessage += `🕐 Updated: ${new Date().toLocaleString()}`;\n\nreturn [{ json: { message, type: 'gainers', data: gainers.map(g => g.json) } }];"
+      },
+      "name": "Format Gainers Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -3024,
+        -624
+      ],
+      "id": "0263636c-63f3-4496-9ac2-6a5cecdfe567"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format current losers message\nconst losers = $input.all();\nlet message = \"📉 *TOP 5 LOSERS*\\n\\n\";\n\nlosers.forEach((item, idx) => {\n  const d = item.json;\n  message += `${idx + 1}. *${d.symbol}* - ${d.name}\\n`;\n  message += `   Change: ${d.change_percent} | Price: ${d.last_price}\\n`;\n  message += `   Volume: ${d.volume}\\n\\n`;\n});\n\nmessage += `🕐 Updated: ${new Date().toLocaleString()}`;\n\nreturn [{ json: { message, type: 'losers', data: losers.map(l => l.json) } }];"
+      },
+      "name": "Format Losers Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -3024,
+        -432
+      ],
+      "id": "b3809ded-86c3-4ba6-83b9-e2b49fbb97a2"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Store the formatted GAINERS message with unique field name\nconst data = $input.first().json;\nreturn [{ json: { gainers_message: data.message, type: 'gainers' } }];"
+      },
+      "name": "Store Gainers Message for AI1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2576,
+        -736
+      ],
+      "id": "6e16a7e0-926a-47e6-a7f3-ee7d85b9b571"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Store the formatted LOSERS message with unique field name\nconst data = $input.first().json;\nreturn [{ json: { losers_message: data.message, type: 'losers' } }];"
+      },
+      "name": "Store Losers Message for AI1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2576,
+        -336
+      ],
+      "id": "76999dc8-1bea-460d-82c3-56ccc5e869ad"
+    },
+    {
+      "parameters": {
+        "chatId": "7669009673",
+        "text": "={{ $json.message }}",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "name": "Send Gainers to Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.1,
+      "position": [
+        -2800,
+        -624
+      ],
+      "id": "2090effe-d407-4a70-8b0a-d6a9f17cfaf9",
+      "webhookId": "3711d2ed-75df-4eef-a248-21554c9fa321",
+      "credentials": {
+        "telegramApi": {
+          "id": "r2KGhsGgZXj8dXSM",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "7669009673",
+        "text": "={{ $json.message }}",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "name": "Send Losers to Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.1,
+      "position": [
+        -2800,
+        -432
+      ],
+      "id": "66af7ff9-12c8-463f-b1d9-03cb522fed0a",
+      "webhookId": "f17fd986-099d-4ecf-b9d0-90e80884f60d",
+      "credentials": {
+        "telegramApi": {
+          "id": "r2KGhsGgZXj8dXSM",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineAll",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -2352,
+        -528
+      ],
+      "id": "1f241c55-c16d-4811-b257-f9e60e091c28",
+      "name": "Merge Current Data"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/13hPJZ75jHwIfMvqjhUNkRBJ8Gnj4A2oIkWdvp6UkoqM/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/13hPJZ75jHwIfMvqjhUNkRBJ8Gnj4A2oIkWdvp6UkoqM/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "options": {}
+      },
+      "name": "Read Previous Data",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [
+        -3920,
+        -240
+      ],
+      "id": "2595d54a-0c22-4ac6-8969-676a842e6acd",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "8n97pKhe8LpHJNTZ",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the latest gainer and latest loser from separate columns\nconst allRows = $input.all();\n\nif (allRows.length === 0) {\n  // No previous data exists\n  return [{ json: { previous_gainer: '', previous_losers: '' } }];\n}\n\n// Find the latest non-empty gainer (search from bottom up)\nlet latestGainer = '';\nfor (let i = allRows.length - 1; i >= 0; i--) {\n  if (allRows[i].json.previous_gainer) {\n    latestGainer = allRows[i].json.previous_gainer;\n    break;\n  }\n}\n\n// Find the latest non-empty loser (search from bottom up)\nlet latestLoser = '';\nfor (let i = allRows.length - 1; i >= 0; i--) {\n  if (allRows[i].json.previous_losers) {\n    latestLoser = allRows[i].json.previous_losers;\n    break;\n  }\n}\n\nreturn [{ \n  json: { \n    previous_gainer: latestGainer, \n    previous_losers: latestLoser \n  } \n}];"
+      },
+      "name": "Get Latest Gainer and Loser1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -3696,
+        -240
+      ],
+      "id": "af6921b1-ae09-4113-874e-5adfc8d157ed"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineAll",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -2128,
+        -384
+      ],
+      "id": "35691e34-1146-4abc-906c-306a1b44d75f",
+      "name": "Merge with Previous Data"
+    },
+    {
+      "parameters": {
+        "jsCode": "// DEBUG: Log what we're receiving\nconst inputs = $input.all();\nconsole.log('Prepare AI Data - Total inputs received:', inputs.length);\n\ninputs.forEach((item, idx) => {\n  console.log(`Input ${idx}:`, JSON.stringify(item.json, null, 2));\n});\n\n// Find current and previous data with new field names\nlet currentGainersMsg = '';\nlet currentLosersMsg = '';\nlet previousGainers = '';\nlet previousLosers = '';\n\nfor (const item of inputs) {\n  // Look for gainers_message field\n  if (item.json.gainers_message) {\n    currentGainersMsg = item.json.gainers_message;\n    console.log('Found current gainers message!');\n  }\n  // Look for losers_message field\n  if (item.json.losers_message) {\n    currentLosersMsg = item.json.losers_message;\n    console.log('Found current losers message!');\n  }\n  // Look for previous data from sheet\n  if (item.json.previous_gainer) {\n    previousGainers = item.json.previous_gainer;\n    console.log('Found previous gainers!');\n  }\n  if (item.json.previous_losers) {\n    previousLosers = item.json.previous_losers;\n    console.log('Found previous losers!');\n  }\n}\n\nconst result = {\n  current_gainers: currentGainersMsg,\n  current_losers: currentLosersMsg,\n  previous_gainers: previousGainers,\n  previous_losers: previousLosers,\n  has_previous_data: !!(previousGainers && previousLosers)\n};\n\nconsole.log('Final output:', JSON.stringify(result, null, 2));\n\nreturn [{ json: result }];"
+      },
+      "name": "Prepare AI Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1904,
+        -384
+      ],
+      "id": "fd5b14c7-4ca1-4cc5-ab1c-76104c9a806e"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a stock market analyst. I will provide you with 4 messages:\n\n**PREVIOUS DATA:**\nPrevious Top 5 Gainers:\n{{ $json.previous_gainers }}\n\nPrevious Top 5 Losers:\n{{ $json.previous_losers }}\n\n**CURRENT DATA:**\nCurrent Top 5 Gainers:\n{{ $json.current_gainers }}\n\nCurrent Top 5 Losers:\n{{ $json.current_losers }}\n\n{{ $json.has_previous_data ? 'Analyze the changes and create a Telegram message that highlights:' : 'This is the first run. Just respond with a friendly initialization message.' }}\n1. 🆕 New entries that entered the top 5\n2. ↗️ Stocks that moved UP in position (e.g., AAPL moved from #3 to #1)\n3. ↘️ Stocks that moved DOWN in position\n4. 📤 Stocks that dropped out of top 5\n5. Brief insights about significant movements\n\nFormat the response as a Telegram-ready message with:\n- Title: 🔔 *MARKET ACTIVITY REPORT*\n- Separate sections for GAINERS ACTIVITY and LOSERS ACTIVITY\n- Use emojis and Markdown formatting\n- Keep it concise but insightful\n- End with timestamp' : '' }}\n\nReturn ONLY the message text, no JSON, no extra formatting.",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        -1712,
+        -704
+      ],
+      "id": "8232ddb6-abac-4645-b877-baaa2e583b04",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "google/gemini-2.0-flash-exp:free",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        -1456,
+        160
+      ],
+      "id": "470d9da0-bf23-446d-bda5-29e1a34c2adf",
+      "name": "Gemini Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "bIQx7XgOhbekoG8Z",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract the AI response\nconst output = $json.output || $json.text || '';\nreturn [{ json: { message: output } }];"
+      },
+      "name": "Extract AI Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1408,
+        -384
+      ],
+      "id": "2253928e-c421-43a2-8adf-53c34937d8d1"
+    },
+    {
+      "parameters": {
+        "chatId": "7669009673",
+        "text": "={{ $json.message }}",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "name": "Send Activity Report to Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.1,
+      "position": [
+        -1184,
+        -384
+      ],
+      "id": "73dce8a1-cd79-467e-b8f7-5acc19c78a03",
+      "webhookId": "ebbcefb2-69bf-45ed-8c16-90dd1e7a52dc",
+      "credentials": {
+        "telegramApi": {
+          "id": "r2KGhsGgZXj8dXSM",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Prepare data for sheet updates AFTER AI analysis\nconst gainersMsg = $('Format Gainers Message').first().json.message;\nconst losersMsg = $('Format Losers Message').first().json.message;\n\nreturn [\n  { json: { previous_gainer: gainersMsg, type: 'gainers' } },\n  { json: { previous_losers: losersMsg, type: 'losers' } }\n];"
+      },
+      "name": "Prepare Sheet Updates1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -960,
+        -384
+      ],
+      "id": "9cc08b32-7f97-4987-bcda-5bd8bf8bb3a6"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/13hPJZ75jHwIfMvqjhUNkRBJ8Gnj4A2oIkWdvp6UkoqM/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/13hPJZ75jHwIfMvqjhUNkRBJ8Gnj4A2oIkWdvp6UkoqM/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "previous_gainer": "={{ $json.previous_gainer }}"
+          },
+          "schema": [
+            {
+              "id": "previous_gainer",
+              "displayName": "previous_gainer",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Save Gainers to Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [
+        -736,
+        -480
+      ],
+      "id": "a08a18e4-2ac2-41f2-9a29-ae176cea8b22",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "8n97pKhe8LpHJNTZ",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/13hPJZ75jHwIfMvqjhUNkRBJ8Gnj4A2oIkWdvp6UkoqM/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/13hPJZ75jHwIfMvqjhUNkRBJ8Gnj4A2oIkWdvp6UkoqM/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "previous_losers": "={{ $json.previous_losers }}"
+          },
+          "schema": [
+            {
+              "id": "previous_losers",
+              "displayName": "previous_losers",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Save Losers to Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [
+        -736,
+        -288
+      ],
+      "id": "1e401e86-092f-48b5-9086-e77f029743db",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "8n97pKhe8LpHJNTZ",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-pro-preview-03-25",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-pro-preview-03-25"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are a stock market analyst. I will provide you with 4 messages:\n\n**PREVIOUS DATA:**\nPrevious Top 5 Gainers:\n{{ $json.previous_gainers }}\n\nPrevious Top 5 Losers:\n{{ $json.previous_losers }}\n\n**CURRENT DATA:**\nCurrent Top 5 Gainers:\n{{ $json.current_gainers }}\n\nCurrent Top 5 Losers:\n{{ $json.current_losers }}\n\n{{ $json.has_previous_data ? 'Analyze the changes and create a Telegram message that highlights:' : 'This is the first run. Just respond with a friendly initialization message.' }}\n\n 🆕 New entries that entered the top 5\n2. ↗️ Stocks that moved UP in position (e.g., AAPL moved from #3 to #1)\n3. ↘️ Stocks that moved DOWN in position\n4. 📤 Stocks that dropped out of top 5\n5. Brief insights about significant movements\n\nFormat the response as a Telegram-ready message with:\n- Title: 🔔 *MARKET ACTIVITY REPORT*\n- Separate sections for GAINERS ACTIVITY and LOSERS ACTIVITY\n- Use emojis and Markdown formatting\n- Keep it concise but insightful\n- End with timestamp' : '' }}\n\nReturn ONLY the message text, no JSON, no extra formatting."
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        -1456,
+        -16
+      ],
+      "id": "ebf88ad6-8cb2-4de6-abbb-5edfcf66a428",
+      "name": "Message a model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "2EspC8gl1HvSUixK",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -1696,
+        -384
+      ],
+      "id": "f1f30785-0486-450b-9f3f-3508bdc72813",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "2EspC8gl1HvSUixK",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Every 10 Min": {
+      "main": [
+        [
+          {
+            "node": "Fetch Gainers Page",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Fetch Losers Page",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Read Previous Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Gainers Page": {
+      "main": [
+        [
+          {
+            "node": "Markdown Gainers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Losers Page": {
+      "main": [
+        [
+          {
+            "node": "Markdown Losers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Markdown Gainers": {
+      "main": [
+        [
+          {
+            "node": "Truncate Markdown Gainers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Markdown Losers": {
+      "main": [
+        [
+          {
+            "node": "Truncate Markdown Losers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Truncate Markdown Gainers": {
+      "main": [
+        [
+          {
+            "node": "Parse Top Gainers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Truncate Markdown Losers": {
+      "main": [
+        [
+          {
+            "node": "Parse Top Losers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Top Gainers": {
+      "main": [
+        [
+          {
+            "node": "Format Gainers Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Top Losers": {
+      "main": [
+        [
+          {
+            "node": "Format Losers Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Gainers Message": {
+      "main": [
+        [
+          {
+            "node": "Send Gainers to Telegram",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Store Gainers Message for AI1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Losers Message": {
+      "main": [
+        [
+          {
+            "node": "Send Losers to Telegram",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Store Losers Message for AI1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Gainers Message for AI1": {
+      "main": [
+        [
+          {
+            "node": "Merge Current Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Losers Message for AI1": {
+      "main": [
+        [
+          {
+            "node": "Merge Current Data",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Current Data": {
+      "main": [
+        [
+          {
+            "node": "Merge with Previous Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Previous Data": {
+      "main": [
+        [
+          {
+            "node": "Get Latest Gainer and Loser1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Latest Gainer and Loser1": {
+      "main": [
+        [
+          {
+            "node": "Merge with Previous Data",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge with Previous Data": {
+      "main": [
+        [
+          {
+            "node": "Prepare AI Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare AI Data": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Extract AI Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract AI Response": {
+      "main": [
+        [
+          {
+            "node": "Send Activity Report to Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Activity Report to Telegram": {
+      "main": [
+        [
+          {
+            "node": "Prepare Sheet Updates1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Sheet Updates1": {
+      "main": [
+        [
+          {
+            "node": "Save Gainers to Sheet",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Save Losers to Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "6e714648-c5e6-41b1-ab46-fab79ff7ba8d",
+  "meta": {
+    "instanceId": "848afde39e98b8f37984a95650d144eb2ba76a2f509e7d7b07292a155fd34a7f"
+  },
+  "id": "e1oZscylqw2quzQG",
+  "tags": []
+}
